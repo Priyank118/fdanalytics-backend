@@ -30,7 +30,26 @@ except ImportError:
     vision = None
 
 app = Flask(__name__)
-CORS(app)
+
+CORS(
+    app,
+    resources={r"/api/*": {"origins": [
+        "http://localhost:3000",
+        "http://15.206.125.141"
+    ]}},
+    supports_credentials=True
+)
+# ==================================================================================
+# --- CORS HANDLING ---
+# ==================================================================================
+@app.after_request
+def after_request(response):
+    response.headers.add("Access-Control-Allow-Origin", request.headers.get("Origin", "*"))
+    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
+    response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
+    response.headers.add("Access-Control-Allow-Credentials", "true")
+    return response
+# ==================================================================================
 
 # --- CONFIGURATION ---
 PORT = 5000
