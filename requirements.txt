@@ -1,0 +1,9 @@
+flask
+flask-cors
+psycopg2-binary
+pyjwt
+bcrypt
+python-dotenv
+google-generativeai
+Pillow
+requests
