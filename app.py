@@ -17,7 +17,7 @@ import difflib
 from PIL import Image as PILImage
 from dotenv import load_dotenv
 load_dotenv()
-
+load_dotenv("/home/ubuntu/backend/.env")
 
 # --- GOOGLE VISION SETUP ---
 # Ensure you have 'service_account.json' in the backend folder
@@ -34,7 +34,8 @@ CORS(app)
 
 # --- CONFIGURATION ---
 PORT = 5000
-JWT_SECRET = 'fd_analytics_secret_key_change_this'
+
+JWT_SECRET = os.getenv("JWT_SECRET") or "fd_analytics_secret_key_change_this"
 UPLOAD_FOLDER = 'uploads'
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:3000") # URL of your React App
 
