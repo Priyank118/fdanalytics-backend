@@ -33,10 +33,7 @@ app = Flask(__name__)
 
 CORS(
     app,
-    resources={r"/api/*": {"origins": [
-        "http://localhost:3000",
-        "http://15.206.125.141"
-    ]}},
+    resources={r"/api/*": {"origins": "http://localhost:3000"}},
     supports_credentials=True
 )
 # ==================================================================================
