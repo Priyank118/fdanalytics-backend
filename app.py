@@ -479,48 +479,48 @@ def delete_match(match_id):
 
 # --- NEW: AI COACH (SQUAD ANALYSIS) --- 
 
-# @app.route('/api/coach/analyze', methods=['POST'])
-# @token_required
-# def analyze_squad():
-#     matches = request.get_json().get('matches', [])
-#     if not matches or len(matches) == 0:
-#          return jsonify({'suggestions': ["Upload more matches to enable AI coaching."]})
+@app.route('/api/coach/analyze', methods=['POST'])
+@token_required
+def analyze_squad():
+    matches = request.get_json().get('matches', [])
+    if not matches or len(matches) == 0:
+         return jsonify({'suggestions': ["Upload more matches to enable AI coaching."]})
     
-#     api_key_env = os.environ.get("GEMINI_API_KEY")
-#     if not api_key_env:
-#         return jsonify({'suggestions': ["AI key missing. Check backend."]}), 500
+    api_key_env = os.environ.get("GEMINI_API_KEY")
+    if not api_key_env:
+        return jsonify({'suggestions': ["AI key missing. Check backend."]}), 500
         
-#     try:
-#         genai.configure(api_key=api_key_env)
-#         model = genai.GenerativeModel('gemini-2.5-flash')
+    try:
+        genai.configure(api_key=api_key_env)
+        model = genai.GenerativeModel('gemini-2.5-flash')
         
-#         # Format match history for the AI
-#         summary_text = "Here is the recent match history for a BGMI esports squad:\n"
-#         for i, m in enumerate(matches[:10]): # Last 10 matches
-#              summary_text += f"Match {i+1}: Map {m.get('map')}, Placed #{m.get('placement')}, Team Kills: {m.get('totalTeamKills')}, Team Dmg: {m.get('totalTeamDamage')}\n"
+        # Format match history for the AI
+        summary_text = "Here is the recent match history for a BGMI esports squad:\n"
+        for i, m in enumerate(matches[:10]): # Last 10 matches
+             summary_text += f"Match {i+1}: Map {m.get('map')}, Placed #{m.get('placement')}, Team Kills: {m.get('totalTeamKills')}, Team Dmg: {m.get('totalTeamDamage')}\n"
              
-#         prompt = f"""
-#         {summary_text}
+        prompt = f"""
+        {summary_text}
         
-#         Act as a strict and professional Esports Coach for BGMI (PUBG Mobile).
-#         Based on these stats, provide 3 specific, high-level tactical recommendations for the WHOLE SQUAD to improve their game.
-#         Focus on: Rotations, Team Synergy, and Aggression Control.
+        Act as a strict and professional Esports Coach for BGMI (PUBG Mobile).
+        Based on these stats, provide 3 specific, high-level tactical recommendations for the WHOLE SQUAD to improve their game.
+        Focus on: Rotations, Team Synergy, and Aggression Control.
         
-#         Output format: Return ONLY a raw JSON array of strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
-#         Do not use Markdown formatting.
-#         """
+        Output format: Return ONLY a raw JSON array of strings. Example: ["Tip 1", "Tip 2", "Tip 3"]
+        Do not use Markdown formatting.
+        """
         
-#         response = model.generate_content(prompt)
-#         text = response.text
-#         if "```json" in text: text = text.split("```json")[1].split("```")[0]
-#         elif "```" in text: text = text.replace("```", "")
+        response = model.generate_content(prompt)
+        text = response.text
+        if "```json" in text: text = text.split("```json")[1].split("```")[0]
+        elif "```" in text: text = text.replace("```", "")
         
-#         suggestions = json.loads(text.strip())
-#         return jsonify({'suggestions': suggestions})
+        suggestions = json.loads(text.strip())
+        return jsonify({'suggestions': suggestions})
         
-#     except Exception as e:
-#         print("AI Coach Error:", e)
-#         return jsonify({'suggestions': ["Focus on team coordination.", "Review your drop spots.", "Improve communication during rotations."]})
+    except Exception as e:
+        print("AI Coach Error:", e)
+        return jsonify({'suggestions': ["Focus on team coordination.", "Review your drop spots.", "Improve communication during rotations."]})
 
 
 # --- PROCESS IMAGE (GEMINI POWERED) ---
