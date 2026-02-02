@@ -172,7 +172,7 @@ def token_required(f):
 
 def analyze_images_with_gemini(images, known_players):
     """
-    Sends images to Gemini 2.5 Flash.
+    Sends images to Gemini.
     Uses strict local variable scoping to avoid NameError.
     """
     # 1. Access Environment Variable Locally
@@ -192,8 +192,8 @@ def analyze_images_with_gemini(images, known_players):
     # 3. Configure Gemini with the local variable
     genai.configure(api_key=api_key_env)
     
-    # Updated Model Name to 'gemini-2.5-flash' based on available models log
-    model_name = 'gemini-2.0-flash-lite'
+    # Use Flash Lite Latest (Cost-Effective & Available)
+    model_name = 'gemini-flash-lite-latest'
     model = genai.GenerativeModel(model_name)
 
     # Prepare known names
@@ -213,7 +213,7 @@ def analyze_images_with_gemini(images, known_players):
     [{roster_context}]
 
     DATA EXTRACTION RULES:
-    1. **Map**: Look for map names like Erangel, Miramar, Sanhok, Vikendi, Livik, Rondo.
+    1. **Map**: Look for map names like Erangel, Miramar, Sanhok, Vikendi, Livik.
     2. **Placement**: Look for big rank numbers like "#1", "#2", or "1st", "2nd".
     3. **Player Stats**: Look for a table with columns. 
        - Column headers might be "Finishes" (Kills), "Damage", "Assists", "Rescue" (Revives), "Survival".
@@ -253,39 +253,63 @@ def analyze_images_with_gemini(images, known_players):
     if valid_image_count == 0:
         raise Exception("No valid images were processed. Ensure you uploaded JPG/PNG files.")
 
-    try:
-        response = model.generate_content(content_payload)
-        text = response.text
-        
-        # Clean up Markdown
-        if "```json" in text:
-            text = text.split("```json")[1].split("```")[0]
-        elif "```" in text:
-            text = text.replace("```", "")
+    # Retry Logic for Rate Limits (429)
+    max_retries = 3
+    base_delay = 2
+
+    for attempt in range(max_retries):
+        try:
+            response = model.generate_content(content_payload)
+            text = response.text
             
-        return json.loads(text.strip())
-    except Exception as e:
-        error_msg = str(e)
-        print(f"❌ Gemini AI Error: {error_msg}")
-        
-        if "404" in error_msg:
-             # Try to list models to help debugging
-             try:
-                available = [m.name for m in genai.list_models()]
-                print(f"Available Models: {available}")
-                raise Exception(f"Model '{model_name}' not found. Check if your API Key supports Gemini 2.5.")
-             except:
-                raise Exception(f"Model '{model_name}' not found (404). Check your API Key permissions.")
-        
-        if "403" in error_msg or "PERMISSION_DENIED" in error_msg:
-             raise Exception("Permission Denied: Ensure your API Key is valid and supports Gemini 2.5 Flash.")
-        
-        # Return fallback for frontend
-        return {
-            "map": "Processing Failed",
-            "placement": 0,
-            "players": []
-        }
+            # Clean up Markdown
+            if "```json" in text:
+                text = text.split("```json")[1].split("```")[0]
+            elif "```" in text:
+                text = text.replace("```", "")
+                
+            return json.loads(text.strip())
+
+        except Exception as e:
+            error_msg = str(e)
+            is_rate_limit = "429" in error_msg or "Resource exhausted" in error_msg
+            
+            if is_rate_limit:
+                if attempt < max_retries - 1:
+                    sleep_time = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"⚠️ Rate Limit (429) on {model_name}. Retrying in {sleep_time:.2f}s... (Attempt {attempt + 1}/{max_retries})")
+                    time.sleep(sleep_time)
+                    continue
+                else:
+                    print(f"❌ Gemini AI Error: {error_msg}")
+                    raise Exception(f"Service Busy (429): Rate limit exceeded after {max_retries} attempts.")
+            
+            # Handle other errors immediately
+            print(f"❌ Gemini AI Error: {error_msg}")
+            if "404" in error_msg:
+                 # Try to list models to help debugging
+                 try:
+                    available = [m.name for m in genai.list_models()]
+                    print(f"Available Models: {available}")
+                    raise Exception(f"Model '{model_name}' not found. Check if your API Key supports this model.")
+                 except:
+                    raise Exception(f"Model '{model_name}' not found (404). Check your API Key permissions.")
+            
+            if "403" in error_msg or "PERMISSION_DENIED" in error_msg:
+                 raise Exception("Permission Denied: Ensure your API Key is valid.")
+            
+            # If unexpected error, just return fallback
+            return {
+                "map": "Processing Failed",
+                "placement": 0,
+                "players": []
+            }
+    
+    return {
+        "map": "Processing Failed",
+        "placement": 0,
+        "players": []
+    }
 
 # ==================================================================================
 # 🌐 API ROUTES
@@ -297,7 +321,7 @@ def home():
     key_status = "Set" if os.environ.get("GEMINI_API_KEY") else "Missing"
     return jsonify({
         "status": "online", 
-        "message": "FDAnalytics Backend 8.6 (Gemini 2.5)", 
+        "message": "FDAnalytics Backend 8.8 (Gemini Flash Lite Latest)", 
         "gemini_key": key_status
     }), 200
 
@@ -477,8 +501,7 @@ def delete_match(match_id):
     conn.close()
     return jsonify({'success': True})
 
-# --- NEW: AI COACH (SQUAD ANALYSIS) --- 
-
+# --- NEW: AI COACH (SQUAD ANALYSIS) ---
 @app.route('/api/coach/analyze', methods=['POST'])
 @token_required
 def analyze_squad():
@@ -492,7 +515,8 @@ def analyze_squad():
         
     try:
         genai.configure(api_key=api_key_env)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Use Flash Lite Latest here as well
+        model = genai.GenerativeModel('gemini-flash-lite-latest')
         
         # Format match history for the AI
         summary_text = "Here is the recent match history for a BGMI esports squad:\n"
