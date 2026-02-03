@@ -64,7 +64,8 @@ GOOGLE_DISCOVERY_URL = "https://accounts.google.com/.well-known/openid-configura
 
 # 🔴 CRITICAL: This URL must match EXACTLY what is in Google Cloud Console > Authorized redirect URIs
 GOOGLE_REDIRECT_URI = "http://localhost:5000/api/auth/google/callback"
-
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:5000")
+GOOGLE_REDIRECT_URI = f"{BACKEND_URL}/api/auth/google/callback"
 # ==================================================================================
 # 🔧 DATABASE CONFIGURATION
 # ==================================================================================
