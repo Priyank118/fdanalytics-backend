@@ -1,6 +1,7 @@
 import io
 import os
 import json
+import random
 import time
 import uuid
 import datetime
@@ -213,7 +214,7 @@ def analyze_images_with_gemini(images, known_players):
     [{roster_context}]
 
     DATA EXTRACTION RULES:
-    1. **Map**: Look for map names like Erangel, Miramar, Sanhok, Vikendi, Livik.
+    1. **Map**: Look for map names like Erangel, Miramar, Sanhok, Vikendi, Livik, Rondo.
     2. **Placement**: Look for big rank numbers like "#1", "#2", or "1st", "2nd".
     3. **Player Stats**: Look for a table with columns. 
        - Column headers might be "Finishes" (Kills), "Damage", "Assists", "Rescue" (Revives), "Survival".
