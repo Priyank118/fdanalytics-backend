@@ -17,6 +17,7 @@ from psycopg2.extras import RealDictCursor, Json
 import difflib
 from PIL import Image as PILImage
 from dotenv import load_dotenv
+from werkzeug.exceptions import HTTPException
 load_dotenv()
 load_dotenv("/home/ubuntu/backend/.env")
 
@@ -31,22 +32,30 @@ except ImportError:
     vision = None
 
 app = Flask(__name__)
-
-CORS(
-    app,
-    resources={r"/api/*": {"origins": "http://localhost:3000"}},
-    supports_credentials=True
-)
+# Enable CORS for all routes and origins, allowing Authorization headers
+CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
 # ==================================================================================
 # --- CORS HANDLING ---
 # ==================================================================================
 @app.after_request
 def after_request(response):
-    response.headers.add("Access-Control-Allow-Origin", request.headers.get("Origin", "*"))
-    response.headers.add("Access-Control-Allow-Headers", "Content-Type,Authorization")
-    response.headers.add("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS")
-    response.headers.add("Access-Control-Allow-Credentials", "true")
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     return response
+
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Pass through HTTP errors
+    if isinstance(e, HTTPException):
+        return e
+
+    print(f"❌ Server Error: {e}")
+    # Return JSON instead of HTML for 500s
+    return jsonify({
+        "error": "Internal Server Error",
+        "message": str(e)
+    }), 500
 # ==================================================================================
 
 # --- CONFIGURATION ---
